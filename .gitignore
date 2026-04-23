@@ -1,0 +1,18 @@
+# build output
+build/
+*.o
+
+# logs / data
+logs/
+*.log
+*.csv
+
+# python cache
+__pycache__/
+*.pyc
+
+# mac junk
+.DS_Store
+
+# if NOT using submodules
+# third_party/bearssl/
