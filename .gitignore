@@ -11,8 +11,5 @@ logs/
 __pycache__/
 *.pyc
 
-# mac junk
 .DS_Store
 
-# if NOT using submodules
-# third_party/bearssl/
