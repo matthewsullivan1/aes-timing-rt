@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -Iinclude
-LDFLAGS =
+CFLAGS = -Wall -Wextra -O2 -Iinclude -Ithird_party/bearssl/inc
+LDFLAGS = third_party/bearssl/build/libbearssl.a
 
 SRC = src/main.c \
       src/benchmark.c \
