@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "benchmark.h"
 
 // Need AES implementation, number of runs, buffer size ?, cache blocking
 
+/*
 typedef enum {
 	IMPL_UNKNOWN = 0,
 	IMPL_CT,
@@ -18,7 +20,7 @@ typedef struct {
 	int cache;
 } bench_config_t;
 
-
+*/
 /*
  * --impl ct --n 100 --sz 16 --cache 1
  */
@@ -107,7 +109,7 @@ int main(int argc, char **argv){
     	printf("Buffer size: %d\n", cfg.buf_size);
     	printf("Cache mode: %d\n", cfg.cache);
 	
-	//return run_benchmark(&cfg);
+	return run_benchmark(&cfg);
 
 
 }
