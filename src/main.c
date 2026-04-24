@@ -103,12 +103,12 @@ int main(int argc, char **argv){
 		print_usage(argv[0]);
 		return 1;
 	}
-	
+	/*
 	printf("Implementation: %d\n", cfg.impl);
     	printf("Runs: %d\n", cfg.num_runs);
     	printf("Buffer size: %d\n", cfg.buf_size);
     	printf("Cache mode: %d\n", cfg.cache);
-	
+	*/
 	return run_benchmark(&cfg);
 
 
