@@ -12,7 +12,7 @@ BIN = ROOT / "build/aes_bench"
 LOG_ROOT = ROOT / "logs"
 
 RUNS = 10000
-BUF_SIZES = [16, 64, 256, 1024]
+BUF_SIZES = [16, 32, 64, 128, 256, 1024]
 IMPLS = ["ct", "big"]
 CACHE_MODES = [0, 1]
 
@@ -57,7 +57,8 @@ def run_benchmarks(outdir):
                 if is_raspberry_pi():
                     cmd = ["taskset", "-c", "3"] + base_cmd
                 else:
-                    cmd = base_cmd
+                    
+                    cmd = ["taskset", "-c", "3"] + base_cmd
                     
                     
                 run_cmd(cmd, logfile)

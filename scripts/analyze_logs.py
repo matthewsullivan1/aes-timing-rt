@@ -134,8 +134,17 @@ def plot_cache_penalty(summary, out_dir):
 
     for impl in sorted(summary["impl"].unique()):
         for buf in sorted(summary["buf"].unique()):
-            no = summary[(summary["impl"] == impl) & (summary["buf"] == buf) & (summary["cache"] == 0)]
-            yes = summary[(summary["impl"] == impl) & (summary["buf"] == buf) & (summary["cache"] == 1)]
+            no = summary[
+                (summary["impl"] == impl)
+                & (summary["buf"] == buf)
+                & (summary["cache"] == 0)
+            ]
+
+            yes = summary[
+                (summary["impl"] == impl)
+                & (summary["buf"] == buf)
+                & (summary["cache"] == 1)
+            ]
 
             if no.empty or yes.empty:
                 continue
@@ -146,60 +155,64 @@ def plot_cache_penalty(summary, out_dir):
             rows.append({
                 "impl": impl,
                 "buf": buf,
-                "cache_penalty_ticks": yes_med - no_med,
-                "cache_penalty_pct": ((yes_med - no_med) / no_med) * 100.0,
+                "no_cache_median": no_med,
+                "cache_median": yes_med,
+                "slowdown_ticks": yes_med - no_med,
+                "slowdown_pct": ((yes_med - no_med) / no_med) * 100.0,
             })
 
     penalty = pd.DataFrame(rows)
     penalty.to_csv(out_dir / "cache_penalty.csv", index=False)
 
-    plt.figure()
-
-    for impl in sorted(penalty["impl"].unique()):
-        s = penalty[penalty["impl"] == impl]
-        plt.plot(s["buf"], s["cache_penalty_pct"], marker="o", label=impl)
-
-    plt.xscale("log", base=2)
-    plt.xlabel("buffer size")
-    plt.ylabel("cache penalty (%)")
-    plt.title("Median cache-eviction penalty")
-    plt.legend()
-    plt.grid(True, which="both")
-
-    out = out_dir / "cache_penalty_pct.png"
-    plt.savefig(out, dpi=200, bbox_inches="tight")
-    plt.close()
-    print(f"[+] Wrote {out}")
-
-
-def plot_distributions(df, out_dir):
-    for buf in sorted(df["buf"].unique()):
+    for ycol, ylabel, filename in [
+        ("slowdown_ticks", "cache eviction slowdown, ticks", "cache_slowdown_ticks.png"),
+        ("slowdown_pct", "cache eviction slowdown, percent", "cache_slowdown_pct.png"),
+    ]:
         plt.figure()
 
-        subset = df[df["buf"] == buf]
+        for impl in sorted(penalty["impl"].unique()):
+            s = penalty[penalty["impl"] == impl].sort_values("buf")
+            plt.plot(s["buf"], s[ycol], marker="o", linewidth=2, label=impl)
 
-        for impl in sorted(subset["impl"].unique()):
-            for cache in sorted(subset["cache"].unique()):
-                s = subset[(subset["impl"] == impl) & (subset["cache"] == cache)]
-                label = f"{impl}, cache={cache}"
-                plt.hist(
-                    s["ticks_clipped"],
-                    bins=80,
-                    density=True,
-                    alpha=0.35,
-                    label=label,
-                )
-
-        plt.xlabel("ticks, clipped 1–99%")
-        plt.ylabel("density")
-        plt.title(f"Timing distribution, buf={buf}")
+        plt.xscale("log", base=2)
+        plt.xlabel("buffer size")
+        plt.ylabel(ylabel)
+        plt.title(ylabel)
         plt.legend()
+        plt.grid(True, which="both")
 
-        out = out_dir / f"distribution_buf{buf}.png"
+        out = out_dir / filename
         plt.savefig(out, dpi=200, bbox_inches="tight")
         plt.close()
         print(f"[+] Wrote {out}")
 
+
+def plot_distributions(df, out_dir):
+    for buf in sorted(df["buf"].unique()):
+        for cache in sorted(df["cache"].unique()):
+            plt.figure()
+
+            subset = df[(df["buf"] == buf) & (df["cache"] == cache)]
+
+            for impl in sorted(subset["impl"].unique()):
+                s = subset[subset["impl"] == impl]["ticks_clipped"]
+
+                s.plot(
+                    kind="kde",
+                    label=impl,
+                    linewidth=2,
+                )
+
+            plt.xlabel("ticks, clipped 1–99%")
+            plt.ylabel("density")
+            plt.title(f"Timing distribution: buf={buf}, cache={cache}")
+            plt.legend()
+            plt.grid(True)
+
+            out = out_dir / f"kde_buf{buf}_cache{cache}.png"
+            plt.savefig(out, dpi=200, bbox_inches="tight")
+            plt.close()
+            print(f"[+] Wrote {out}")
 
 def plot_variability(summary, out_dir):
     plt.figure()
@@ -223,6 +236,28 @@ def plot_variability(summary, out_dir):
     plt.close()
     print(f"[+] Wrote {out}")
 
+def plot_cache_vs_no_cache_by_impl(summary, out_dir):
+    for impl in sorted(summary["impl"].unique()):
+        plt.figure()
+
+        subset = summary[summary["impl"] == impl]
+
+        for cache in sorted(subset["cache"].unique()):
+            s = subset[subset["cache"] == cache].sort_values("buf")
+            label = "cache eviction" if cache == 1 else "no cache eviction"
+            plt.plot(s["buf"], s["median"], marker="o", linewidth=2, label=label)
+
+        plt.xscale("log", base=2)
+        plt.xlabel("buffer size")
+        plt.ylabel("median ticks")
+        plt.title(f"{impl}: cache vs no-cache median timing")
+        plt.legend()
+        plt.grid(True, which="both")
+
+        out = out_dir / f"{impl}_cache_vs_no_cache.png"
+        plt.savefig(out, dpi=200, bbox_inches="tight")
+        plt.close()
+        print(f"[+] Wrote {out}")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -249,7 +284,8 @@ def main():
     plot_cache_penalty(summary, out_dir)
     plot_distributions(df, out_dir)
     plot_variability(summary, out_dir)
-
+    plot_cache_vs_no_cache_by_impl(summary, out_dir)
+    
     print(f"\n[+] Analysis written to {out_dir}")
 
 

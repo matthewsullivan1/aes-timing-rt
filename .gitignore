@@ -14,3 +14,6 @@ __pycache__/
 .DS_Store
 
 .venv/
+
+results_corun/
+analysis_corun/
