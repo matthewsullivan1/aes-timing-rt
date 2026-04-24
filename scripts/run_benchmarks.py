@@ -5,6 +5,7 @@ import pathlib
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 BIN = ROOT / "build/aes_bench"
@@ -15,6 +16,16 @@ BUF_SIZES = [16, 64, 256, 1024]
 IMPLS = ["ct", "big"]
 CACHE_MODES = [0, 1]
 
+
+def is_raspberry_pi():
+    model_path = "/proc/device-tree/model"
+    
+    if os.path.exists(model_path):
+        with open(model_path, 'r', errors="ignore") as f:
+            model = f.read().lower()
+            return "raspberry pi" in model
+    
+    return False
 
 def run_cmd(cmd, logfile):
     print(f"[*] Running: {' '.join(map(str, cmd))}")
@@ -35,14 +46,20 @@ def run_benchmarks(outdir):
             for cache in CACHE_MODES:
                 logfile = outdir / f"{impl}_buf{buf}_cache{cache}.log"
 
-                cmd = [
+                base_cmd = [
                     str(BIN),
                     "--impl", impl,
                     "--sz", str(buf),
                     "--n", str(RUNS),
                     "--cache", str(cache),
                 ]
-
+                
+                if is_raspberry_pi():
+                    cmd = ["taskset", "-c", "3"] + base_cmd
+                else:
+                    cmd = base_cmd
+                    
+                    
                 run_cmd(cmd, logfile)
 
 
