@@ -2,23 +2,49 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2 -Iinclude -Ithird_party/bearssl/inc
 LDFLAGS = third_party/bearssl/build/libbearssl.a
 
-SRC = src/main.c \
-      src/benchmark.c \
-      src/aes_impl.c \
-      src/impl_ct.c \
-      src/impl_big.c \
-      src/timer.c
+#Common source files
+COMMON_SRC = \
+    src/aes_impl.c \
+    src/impl_ct.c \
+    src/impl_big.c \
+    src/timer.c
 
-OUT = build/aes_bench
+#Benchmark
+BENCH_SRC = \
+    src/main.c \
+    src/benchmark.c \
+    $(COMMON_SRC)
 
-all: $(OUT)
+BENCH_OUT = build/aes_bench
 
-$(OUT): $(SRC)
+#timing analysis
+TIMING_SRC = \
+    src/timing_main.c \
+    src/timing_diff.c \
+    $(COMMON_SRC)
+
+TIMING_OUT = build/timing_bench
+
+
+all: $(BENCH_OUT) $(TIMING_OUT)
+
+#Build aes_bench
+$(BENCH_OUT): $(BENCH_SRC)
 	mkdir -p build
-	$(CC) $(CFLAGS) $(SRC) -o $(OUT) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(BENCH_SRC) -o $(BENCH_OUT) $(LDFLAGS)
+
+#Build timing_bench
+$(TIMING_OUT): $(TIMING_SRC)
+	mkdir -p build
+	$(CC) $(CFLAGS) $(TIMING_SRC) -o $(TIMING_OUT) $(LDFLAGS)
 
 clean:
 	rm -rf build
 
+#Run target for performance benchmark
 run:
-	./$(OUT) --impl ct --n 10 --sz 16 --cache 0
+	./$(BENCH_OUT) --impl ct --n 10 --sz 16 --cache 0
+
+#Run target for timing experiment
+run-timing: $(TIMING_OUT)
+	./$(TIMING_OUT) 10000 1000
